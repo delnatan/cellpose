@@ -19,6 +19,12 @@ except Exception as err:
     
 import logging
 
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s | %(filename)s (%(lineno)d):\n"\
+        "\t%(message)s",
+    level=logging.DEBUG
+)
+
 # settings re-grouped a bit
 def main():
     parser = argparse.ArgumentParser(description='cellpose parameters')
