@@ -6,7 +6,9 @@ import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
 import datetime
+import logging
 
+logger = logging.getLogger(__name__)
 
 from . import transforms, io, dynamics, utils
 
@@ -218,8 +220,9 @@ class CPnet(nn.Module):
         torch.save(self.state_dict(), filename)
 
     def load_model(self, filename, device=None):
+        logger.debug(f"loading model into device : {device} ")
         if (device is not None) and (device.type != 'cpu'):
-            state_dict = torch.load(filename, map_location=device)
+            state_dict = torch.load(filename, map_location=torch.device("mps"))
         else:
             self.__init__(self.nbase,
                           self.nout,

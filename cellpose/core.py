@@ -59,28 +59,42 @@ def _use_gpu_torch(gpu_number=0):
         core_logger.info('** TORCH CUDA version installed and working. **')
         return True
     except:
-        core_logger.info('TORCH CUDA version not installed/working.')
-        return False
+        try:
+            device = torch.device('mps:' + str(gpu_number))
+            _ = torch.zeros([1, 2, 3]).to(device)
+            core_logger.info('** TORCH MPS version installed and working. **')
+            return True
+        except:
+            core_logger.info('TORCH CUDA version not installed/working.')
+            return False
 
 def assign_device(use_torch=True, gpu=False, device=0):
-    mac = False
+    """
+    from main.py device is a str type and either can be '0','1',... for CUDA
+     or 'mps' for an M1 gpu device.
+    This function is called internally omitting 'device' argument
+    """
+    mac = sys.platform == "darwin"
     cpu = True
+    
     if isinstance(device, str):
-        if device=='mps':
-            mac = True 
+        if mac:
+            # assume there's only one GPU
+            device = 0
         else:
             device = int(device)
-    if gpu and use_gpu(use_torch=True):
+
+    if gpu and use_gpu(use_torch=True) and not mac:
         device = torch.device(f'cuda:{device}')
         gpu=True
         cpu=False
-        core_logger.info('>>>> using GPU')
+        core_logger.info('>>>> using NVIDIA GPU')
     elif mac:
         try:
-            device = torch.device('mps')
+            device = torch.device(f'mps:{device}')
             gpu=True
             cpu=False
-            core_logger.info('>>>> using GPU')
+            core_logger.info('>>>> using Apple M1 GPU')
         except:
             cpu = True 
             gpu = False
@@ -89,6 +103,7 @@ def assign_device(use_torch=True, gpu=False, device=0):
         device = torch.device('cpu')
         core_logger.info('>>>> using CPU')
         gpu=False
+
     return device, gpu
 
 def check_mkl(use_torch=True):
