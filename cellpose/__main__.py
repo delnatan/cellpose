@@ -123,7 +123,13 @@ def main():
     training_args.add_argument('--save_every',
                         default=100, type=int, help='number of epochs to skip between saves. Default: %(default)s')
     training_args.add_argument('--save_each', action='store_true', help='save the model under a different filename per --save_every epoch for later comparsion')
-    
+    # add option to blur input images (but not the labels/flows)
+    training_args.add_argument(
+        "--blur_sigma",
+        nargs=2,
+        type=float,
+        help="gaussian blur input image with sigma randomly chosen from range",
+    )
     args = parser.parse_args()
 
     
@@ -332,6 +338,7 @@ def main():
             
             # train segmentation model
             if args.train:
+                blur_sigma = tuple(args.blur_sigma)
                 cpmodel_path = model.train(images, labels, train_files=image_names,
                                            test_data=test_images, test_labels=test_labels, test_files=image_names_test,
                                            learning_rate=args.learning_rate, 
@@ -340,7 +347,8 @@ def main():
                                            save_path=os.path.realpath(args.dir), save_every=args.save_every,
                                            save_each=args.save_each,
                                            n_epochs=args.n_epochs,
-                                           batch_size=args.batch_size, 
+                                           batch_size=args.batch_size,
+                                           blur_range=blur_sigma,
                                            min_train_masks=args.min_train_masks)
                 model.pretrained_model = cpmodel_path
                 logger.info('>>>> model trained and saved to %s'%cpmodel_path)

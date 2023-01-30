@@ -667,7 +667,7 @@ def _image_resizer(img, resize=512, to_uint8=False):
 
 
 def random_rotate_and_resize(X, Y=None, scale_range=1., xy = (224,224), 
-                             do_flip=True, rescale=None, unet=False, random_per_image=True):
+                             do_flip=True, rescale=None, unet=False, blur_range=None, random_per_image=True):
     """ augmentation by random rotation and resizing
         X and Y are lists or arrays of length nimg, with dims channels x Ly x Lx (channels optional)
         Parameters
@@ -753,8 +753,19 @@ def random_rotate_and_resize(X, Y=None, scale_range=1., xy = (224,224),
                 if nt > 1 and not unet:
                     labels[2] = -labels[2]
 
+        if blur_range is not None:
+            assert type(blur_range) == tuple and len(blur_range) == 2
+            sigma_low, sigma_high = blur_range
+            blursigma = sigma_low + (sigma_high - sigma_low) * np.random.rand()
+
         for k in range(nchan):
-            I = cv2.warpAffine(img[k], M, (xy[1],xy[0]), flags=cv2.INTER_LINEAR)
+            # blur before warping
+            if blur_range is not None:
+                # kernel size is (0,0), to be computed automatically based on sigma
+                I = cv2.GaussianBlur(img[k], (0,0), sigmaX=blursigma, sigmaY=blursigma)
+                I = cv2.warpAffine(I, M, (xy[1],xy[0]), flags=cv2.INTER_LINEAR)
+            else:
+                I = cv2.warpAffine(img[k], M, (xy[1],xy[0]), flags=cv2.INTER_LINEAR)
             imgi[n,k] = I
 
         if Y is not None:
